@@ -1,0 +1,197 @@
+      from __future__ import division
+
+
+import pygame as pg
+from .. import setup, tools
+from .. import constants as c
+from .. import game_sound
+from .. components import mario
+from .. components import collider
+from .. components import bricks
+from .. components import coin_box
+from .. components import enemies
+from .. components import checkpoint
+from .. components import flagpole
+from .. components import info
+from .. components import score
+from .. components import castle_flag
+
+
+class Level1(tools._State):
+    def __init__(self):
+        tools._State.__init__(self)
+
+    def startup(self, current_time, persist):
+        """Called when the State object is created"""
+        self.game_info = persist
+        self.persist = self.game_info
+        self.game_info[c.CURRENT_TIME] = current_time
+        self.game_info[c.LEVEL_STATE] = c.NOT_FROZEN
+        self.game_info[c.MARIO_DEAD] = False
+
+        self.state = c.NOT_FROZEN
+        self.death_timer = 0
+        self.flag_timer = 0
+        self.flag_score = None
+        self.flag_score_total = 0
+
+        self.moving_score_list = []
+        self.overhead_info_display = info.OverheadInfo(self.game_info, c.LEVEL)
+        self.sound_manager = game_sound.Sound(self.overhead_info_display)
+
+        self.setup_background()
+        self.setup_ground()
+        self.setup_pipes()
+        self.setup_steps()
+        self.setup_bricks()
+        self.setup_coin_boxes()
+        self.setup_flag_pole()
+        self.setup_enemies()
+        self.setup_mario()
+        self.setup_checkpoints()
+        self.setup_spritegroups()
+
+
+    def setup_background(self):
+        """Sets the background image, rect and scales it to the correct
+        proportions"""
+        self.background = setup.GFX['level_1']
+        self.back_rect = self.background.get_rect()
+        self.background = pg.transform.scale(self.background,
+                                  (int(self.back_rect.width*c.BACKGROUND_MULTIPLER),
+                                  int(self.back_rect.height*c.BACKGROUND_MULTIPLER)))
+        self.back_rect = self.background.get_rect()
+        width = self.back_rect.width
+        height = self.back_rect.height
+
+        self.level = pg.Surface((width, height)).convert()
+        self.level_rect = self.level.get_rect()
+        self.viewport = setup.SCREEN.get_rect(bottom=self.level_rect.bottom)
+        self.viewport.x = self.game_info[c.CAMERA_START_X]
+
+
+    def setup_ground(self):
+        """Creates collideable, invisible rectangles over top of the ground for
+        sprites to walk on"""
+        ground_rect1 = collider.Collider(0, c.GROUND_HEIGHT,    2953, 60)
+        ground_rect2 = collider.Collider(3048, c.GROUND_HEIGHT,  635, 60)
+        ground_rect3 = collider.Collider(3819, c.GROUND_HEIGHT, 2735, 60)
+        ground_rect4 = collider.Collider(6647, c.GROUND_HEIGHT, 2300, 60)
+
+        self.ground_group = pg.sprite.Group(ground_rect1,
+                                           ground_rect2,
+                                           ground_rect3,
+                                           ground_rect4)
+
+
+    def setup_pipes(self):
+        """Create collideable rects for all the pipes"""
+
+        pipe1 = collider.Collider(1202, 452, 83, 82)
+        pipe2 = collider.Collider(1631, 409, 83, 140)
+        pipe3 = collider.Collider(1973, 366, 83, 170)
+        pipe4 = collider.Collider(2445, 366, 83, 170)
+        pipe5 = collider.Collider(6989, 452, 83, 82)
+        pipe6 = collider.Collider(7675, 452, 83, 82)
+
+        self.pipe_group = pg.sprite.Group(pipe1, pipe2,
+                                          pipe3, pipe4,
+                                          pipe5, pipe6)
+
+
+    def setup_steps(self):
+        """Create collideable rects for all the steps"""
+        step1 = collider.Collider(5745, 495, 40, 44)
+        step2 = collider.Collider(5788, 452, 40, 44)
+        step3 = collider.Collider(5831, 409, 40, 44)
+        step4 = collider.Collider(5874, 366, 40, 176)
+
+
+        step5 = collider.Collider(6001, 366, 40, 176)
+        step6 = collider.Collider(6044, 408, 40, 40)
+        step7 = collider.Collider(6087, 452, 40, 40)
+        step8 = collider.Collider(6130, 495, 40, 40)
+
+        step9 = collider.Collider(6345, 495, 40, 40)
+        step10 = collider.Collider(6388, 452, 40, 40)
+        step11 = collider.Collider(6431, 409, 40, 40)
+        step12 = collider.Collider(6474, 366, 40, 40)
+        step13 = collider.Collider(6517, 366, 40, 176)
+
+        step14 = collider.Collider(6644, 366, 40, 176)
+        step15 = collider.Collider(6687, 408, 40, 40)
+        step16 = collider.Collider(6728, 452, 40, 40)
+        step17 = collider.Collider(6771, 495, 40, 40)
+
+        step18 = collider.Collider(7760, 495, 40, 40)
+        step19 = collider.Collider(7803, 452, 40, 40)
+        step20 = collider.Collider(7845, 409, 40, 40)
+        step21 = collider.Collider(7888, 366, 40, 40)
+        step22 = collider.Collider(7931, 323, 40, 40)
+        step23 = collider.Collider(7974, 280, 40, 40)
+        step24 = collider.Collider(8017, 237, 40, 40)
+        step25 = collider.Collider(8060, 194, 40, 40)
+        step26 = collider.Collider(8103, 194, 40, 360)
+
+        step27 = collider.Collider(8488, 495, 40, 40)
+
+        self.step_group = pg.sprite.Group(step1,  step2,
+                                          step3,  step4,
+                                          step5,  step6,
+                                          step7,  step8,
+                                          step9,  step10,
+                                          step11, step12,
+                                          step13, step14,
+                                          step15, step16,
+                                          step17, step18,
+                                          step19, step20,
+                                          step21, step22,
+                                          step23, step24,
+                                          step25, step26,
+                                          step27)
+
+
+    def setup_bricks(self):
+        """Creates all the breakable bricks for the level.  Coin and
+        powerup groups are created so they can be passed to bricks."""
+        self.coin_group = pg.sprite.Group()
+        self.powerup_group = pg.sprite.Group()
+        self.brick_pieces_group = pg.sprite.Group()
+
+        brick1  = bricks.Brick(858,  365)
+        brick2  = bricks.Brick(944,  365)
+        brick3  = bricks.Brick(1030, 365)
+        brick4  = bricks.Brick(3299, 365)
+        brick5  = bricks.Brick(3385, 365)
+        brick6  = bricks.Brick(3430, 193)
+        brick7  = bricks.Brick(3473, 193)
+        brick8  = bricks.Brick(3516, 193)
+        brick9  = bricks.Brick(3559, 193)
+        brick10 = bricks.Brick(3602, 193)
+        brick11 = bricks.Brick(3645, 193)
+        brick12 = bricks.Brick(3688, 193)
+        brick13 = bricks.Brick(3731, 193)
+        brick14 = bricks.Brick(3901, 193)
+        brick15 = bricks.Brick(3944, 193)
+        brick16 = bricks.Brick(3987, 193)
+        brick17 = bricks.Brick(4030, 365, c.SIXCOINS, self.coin_group)
+        brick18 = bricks.Brick(4287, 365)
+        brick19 = bricks.Brick(4330, 365, c.STAR, self.powerup_group)
+        brick20 = bricks.Brick(5058, 365)
+        brick21 = bricks.Brick(5187, 193)
+        brick22 = bricks.Brick(5230, 193)
+        brick23 = bricks.Brick(5273, 193)
+        brick24 = bricks.Brick(5488, 193)
+        brick25 = bricks.Brick(5574, 193)
+        brick26 = bricks.Brick(5617, 193)
+        brick27 = bricks.Brick(5531, 365)
+        brick28 = bricks.Brick(5574, 365)
+        brick29 = bricks.Brick(7202, 365)
+        brick30 = bricks.Brick(7245, 365)
+        brick31 = bricks.Brick(7331, 365)
+
+        self.brick_group = pg.sprite.Group(brick1,  brick2,
+                                           brick3,  brick4,
+                                           brick5,  brick6,
+                                           brick7,  brick8,
+                                           brick9,  brick10,
